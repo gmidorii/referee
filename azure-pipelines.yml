@@ -1,0 +1,32 @@
+trigger:
+- master
+
+variables:
+  GOPATH: '$(system.defaultWorkingDirectory)/gopath'
+
+stages:
+- stage: build
+  jobs:
+  - job: go
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        go build
+      displayName: 'go build'
+    - script: |
+        go test -v -cover -coverprofile=c.out
+        go tool cover -html=c.out -o coverage.html
+      displayName: 'go test'
+
+- stage: deploy
+  # exec only master branch
+  condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+  jobs:
+  - job: deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        echo 'Deploy....'
+      displayName: 'deploy'
